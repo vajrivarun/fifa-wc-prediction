@@ -90,7 +90,7 @@ const toastMessage = document.getElementById("toast-message");
 // App Initialization
 // ===============================================================
 
-// Check if Firebase Emulator is running
+// Check if Firebase Emulator is running or if we are in production
 async function detectDatabaseMode() {
   if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
     try {
@@ -103,7 +103,9 @@ async function detectDatabaseMode() {
       console.log("Firebase Emulator NOT running. Falling back to client-side Mock Mode.");
     }
   } else {
-    isMockMode = true;
+    // Live hosted URL -> Use production Firebase!
+    isMockMode = false;
+    console.log("Production hosted URL detected! Using Cloud Firebase.");
   }
   
   initApplication();
@@ -121,20 +123,23 @@ function initApplication() {
   if (!isMockMode) {
     // 1. Initialize Real Firebase SDK
     const firebaseConfig = {
-      apiKey: "dummy-api-key-for-emulator-testing",
-      authDomain: "fifa-prediction-app.firebaseapp.com",
-      projectId: "fifa-prediction-app",
-      storageBucket: "fifa-prediction-app.appspot.com",
-      messagingSenderId: "1234567890",
-      appId: "1:1234567890:web:abcdef"
+      apiKey: "AIzaSyDxAN7RNBPUDx2tQ7nTTJrCAzxXSfjFeS8",
+      authDomain: "fifa-wc-prediction-league-vg.firebaseapp.com",
+      projectId: "fifa-wc-prediction-league-vg",
+      storageBucket: "fifa-wc-prediction-league-vg.firebasestorage.app",
+      messagingSenderId: "255213613986",
+      appId: "1:255213613986:web:1a63b215cbe38b4f4af8fb",
+      measurementId: "G-9GXZ1H7MN2"
     };
 
     firebaseApp = initializeApp(firebaseConfig);
     auth = getAuth(firebaseApp);
     db = getFirestore(firebaseApp);
 
-    connectAuthEmulator(auth, "http://localhost:9099");
-    connectFirestoreEmulator(db, "localhost", 8080);
+    if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+      connectAuthEmulator(auth, "http://localhost:9099");
+      connectFirestoreEmulator(db, "localhost", 8080);
+    }
     
     // Auth observer for Firebase Auth
     onAuthStateChanged(auth, (user) => {
