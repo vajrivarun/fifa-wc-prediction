@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: config
+    // Document ID: game
+    // Fields:
+    //   - kickoffTime: timestamp (required) - Match kickoff time
+    //   - teamA: string (required, max 50 chars) - "Spain"
+    //   - teamB: string (required, max 50 chars) - "Belgium"
+    //
+    // Collection: predictions_public
+    // Document ID: {userId} (matches Firebase Auth UID)
+    // Fields:
+    //   - userId: string (required, matches doc ID) - Creator UID
+    //   - displayName: string (required, 1-100 chars) - User display name
+    //   - photoURL: string (optional, 1-500 chars) - User avatar image URL
+    //   - votedAt: timestamp (required) - Timestamp of vote cast
+    //
+    // Collection: predictions_private
+    // Document ID: {userId} (matches Firebase Auth UID)
+    // Fields:
+    //   - userId: string (required, matches doc ID) - Creator UID
+    //   - spainScore: number (required, 0-99) - Predicted score for Spain
+    //   - belgiumScore: number (required, 0-99) - Predicted score for Belgium
+    //   - votedAt: timestamp (required) - Timestamp of vote cast
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function getKickoffTime() {
+      return get(/databases/$(database)/documents/config/game).data.kickoffTime;
+    }
+    
+    // Validations for predictions_public
+    function isValidPublicPrediction(data, userId) {
+      return data.keys().hasOnly(['userId', 'displayName', 'photoURL', 'votedAt']) &&
+             data.userId == userId &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 100 &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
+             data.votedAt is timestamp;
+    }
+    
+    // Validations for predictions_private
+    function isValidPrivatePrediction(data, userId) {
+      return data.keys().hasOnly(['userId', 'prediction', 'votedAt']) &&
+             data.userId == userId &&
+             data.prediction is string && data.prediction in ['Spain', 'Belgium'] &&
+             data.votedAt is timestamp;
+    }
+
+    // Config permissions:
+    // Anyone authenticated can read.
+    // For test simulation purposes, we allow authenticated users to update kickoffTime.
+    match /config/game {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    
+    // predictions_public permissions:
+    // Read: authenticated users.
+    // Create/Update: Owner can write if current time is before kickoff.
+    match /predictions_public/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId)
+                            && isValidPublicPrediction(request.resource.data, userId)
+                            && request.time < getKickoffTime();
+    }
+    
+    // predictions_private permissions:
+    // Read:
+    // 1. Owner can read at any time.
+    // 2. Any authenticated user can read if current server time is 5 minutes post kickoff.
+    // Create/Update: Owner can write if current time is before kickoff.
+    match /predictions_private/{userId} {
+      allow read: if isAuthenticated() && (
+        isOwner(userId) ||
+        request.time > getKickoffTime() + duration.value(5, 'm')
+      );
+      allow create, update: if isOwner(userId)
+                            && isValidPrivatePrediction(request.resource.data, userId)
+                            && request.time < getKickoffTime();
+    }
+  }
+}

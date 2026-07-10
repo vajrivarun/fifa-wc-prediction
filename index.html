@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FIFA WC Prediction - Spain vs Belgium</title>
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  
+  <div class="app-container">
+    
+    <!-- Application Header (User info/log out) -->
+    <header id="app-header" class="app-header hidden-element">
+      <div class="brand-section">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <h1 class="brand-title">WC Predictor</h1>
+          <span id="sandbox-badge" class="voters-count hidden-element" style="background: hsla(40, 95%, 55%, 0.15); color: var(--accent-warning); border: 1px solid hsla(40, 95%, 55%, 0.3); font-size: 0.6rem; padding: 2px 6px;">Sandbox</span>
+        </div>
+        <span class="brand-subtitle">Spain v Belgium Pool</span>
+      </div>
+      <div class="user-profile">
+        <button id="btn-signout" class="btn-signout">Sign Out</button>
+        <img id="user-avatar" class="user-avatar" src="" alt="User Avatar">
+      </div>
+    </header>
+
+    <main>
+      <!-- View 1: Auth Screen -->
+      <section id="view-auth" class="glass-card auth-view">
+        <div class="auth-logo">🏆</div>
+        <h2 class="auth-title">FIFA WC Prediction League</h2>
+        <p class="auth-desc">Sign in with your Google account to cast and lock your prediction for the Spain vs Belgium clash.</p>
+        
+        <button id="btn-google-login" class="btn-google">
+          <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+            <g transform="matrix(1, 0, 0, 1, 0, 0)">
+              <path d="M21.35,11.1H12v2.7h5.38c-0.24,1.28 -0.96,2.37 -2.04,3.1v2.57h3.3c1.93,-1.78 3.04,-4.4 3.04,-7.48c0,-0.61 -0.06,-1.2 -0.17,-1.78Z" fill="#4285F4" />
+              <path d="M12,20.62c2.43,0 4.47,-0.8 5.96,-2.18l-3.3,-2.57c-0.9,0.6 -2.07,0.97 -3.3,0.97c-2.34,0 -4.33,-1.58 -5.04,-3.71H2.9v2.66c1.49,2.96 4.54,4.83 7.8,4.83Z" fill="#34A853" />
+              <path d="M6.96,13.13c-0.18,-0.54 -0.28,-1.11 -0.28,-1.7s0.1,-1.16 0.28,-1.7V7.07H2.9C2.3,8.26 1.97,9.6 1.97,11c0,1.4 0.33,2.74 0.93,3.93l3.1,-2.42c-0.18,-0.54 -0.18,-0.54 -0.04,-1.38Z" fill="#FBBC05" />
+              <path d="M12,7.38c1.32,0 2.5,0.45 3.44,1.35l2.58,-2.58C16.46,4.72 14.43,4 12,4C8.74,4 5.69,5.87 4.2,8.83l3.1,2.42c0.71,-2.13 2.7,-3.71 5.04,-3.71Z" fill="#EA4335" />
+            </g>
+          </svg>
+          Sign in with Google
+        </button>
+
+        <!-- Simulated accounts block (shown when in mock/local fallback mode) -->
+        <div id="mock-login-section" class="hidden-element" style="margin-top: 16px; border-top: 1px dashed var(--border-glass); padding-top: 20px; width: 100%;">
+          <p style="font-size: 0.8rem; color: var(--accent-warning); font-weight: 600; margin-bottom: 12px; letter-spacing: 0.5px; text-transform: uppercase;">
+            Sandbox Mode Auth
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <input type="text" id="mock-username-input" placeholder="Type voter display name..." style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); padding: 10px 16px; border-radius: 12px; color: var(--color-text); font-family: var(--font-sans); outline: none; font-size: 0.9rem; text-align: center; width: 100%;">
+            <button id="btn-mock-login" class="btn-submit" style="background: linear-gradient(135deg, var(--accent-warning) 0%, #d48000 100%); color: #000; box-shadow: 0 4px 15px rgba(212, 128, 0, 0.3);">
+              Enter Prediction Pool
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- View 2: Prediction & Voters Screen (Authenticated) -->
+      <section id="view-dashboard" class="hidden-element" style="display: flex; flex-direction: column; gap: 20px;">
+        
+        <!-- Match Prediction Card -->
+        <div class="glass-card match-card">
+          <div id="match-status" class="status-badge open">
+            <span class="status-dot">●</span> <span id="status-text">Open</span>
+          </div>
+
+          <div class="match-header">
+            <span class="match-league">FIFA World Cup</span>
+            <div class="match-teams-container">
+              <div class="team">
+                <div class="flag-container">
+                  <div class="flag-spain">
+                    <div class="stripe-red"></div>
+                    <div class="stripe-yellow">
+                      <div class="flag-spain-crest"></div>
+                    </div>
+                    <div class="stripe-red"></div>
+                  </div>
+                </div>
+                <span class="team-name">Spain</span>
+              </div>
+              
+              <div class="vs-divider">VS</div>
+              
+              <div class="team">
+                <div class="flag-container">
+                  <div class="flag-belgium">
+                    <div class="stripe-black"></div>
+                    <div class="stripe-yellow"></div>
+                    <div class="stripe-red"></div>
+                  </div>
+                </div>
+                <span class="team-name">Belgium</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Countdown Timer -->
+          <div class="countdown-section">
+            <div id="countdown-label" class="countdown-label">Time Remaining to Kickoff</div>
+            <div id="countdown-timer" class="countdown-timer">00:00:00</div>
+          </div>
+
+          <!-- Outcome Selector Panel -->
+          <div class="prediction-selector">
+            <div style="text-align: center; font-size: 0.75rem; color: var(--color-text-muted); font-weight: 800; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase;">
+              Predict the Match Outcome
+            </div>
+            <div id="outcome-selector-group" class="outcome-selector-group">
+              <button class="btn-outcome" data-outcome="Spain">
+                <span class="outcome-flag">🇪🇸</span>
+                <span class="outcome-label">Spain Win</span>
+              </button>
+              <button class="btn-outcome" data-outcome="Belgium">
+                <span class="outcome-flag">🇧🇪</span>
+                <span class="outcome-label">Belgium Win</span>
+              </button>
+            </div>
+
+            <button id="btn-submit-prediction" class="btn-submit" disabled style="margin-top: 12px;">
+              Select an Outcome
+            </button>
+          </div>
+        </div>
+
+        <!-- Voters panel -->
+        <div class="glass-card voters-card">
+          <div class="voters-header">
+            <h3 class="voters-title">Predictions Pool</h3>
+            <span id="voter-count-badge" class="voters-count">0 Voted</span>
+          </div>
+
+          <div id="voters-list-container" class="voters-list">
+            <!-- Voter items will be dynamically appended here -->
+            <div class="empty-voters">No votes cast yet. Be the first to predict!</div>
+          </div>
+        </div>
+
+        <!-- Simulation Controls Panel (collapsible) -->
+        <div class="simulator-panel">
+          <div id="simulator-header" class="simulator-header">
+            <span class="simulator-title">🧪 Simulation Sandbox</span>
+            <button id="simulator-toggle-btn" class="simulator-toggle-btn">Collapse</button>
+          </div>
+          <div id="simulator-body" class="simulator-body">
+            <p class="simulator-desc">Change the match kickoff time to test the dynamic transitions, lockouts, and prediction reveal phases:</p>
+            <div class="simulator-btn-grid">
+              <button id="btn-sim-pre" class="btn-sim active" data-time="future">Pre-Kickoff (In 2m)</button>
+              <button id="btn-sim-post" class="btn-sim" data-time="now">Locked (Active Now)</button>
+              <button id="btn-sim-reveal" class="btn-sim" data-time="past">Reveal (+6m Ago)</button>
+              <button id="btn-sim-reset" class="btn-sim" data-time="reset">Reset Default</button>
+              <button id="btn-sim-add-voters" class="btn-sim" style="grid-column: span 2; border-color: var(--accent-success); color: var(--accent-success); margin-top: 8px;">➕ Generate Mock Voters</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">
+    <span id="toast-message">Prediction submitted!</span>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
