@@ -2,6 +2,8 @@ import { initializeApp } from "firebase/app";
 import { 
   getAuth, 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider, 
   signOut, 
   onAuthStateChanged,
@@ -141,6 +143,18 @@ function initApplication() {
       connectFirestoreEmulator(db, "localhost", 8080);
     }
     
+    // Handle redirect sign in result (for mobile & pop-up blocked environments)
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result && result.user) {
+          showToast(`Welcome ${result.user.displayName}!`);
+        }
+      })
+      .catch((error) => {
+        console.error("Redirect Login error:", error);
+        handleAuthErrorMessage(error);
+      });
+
     // Auth observer for Firebase Auth
     onAuthStateChanged(auth, (user) => {
       handleAuthStateChange(user);
@@ -218,13 +232,42 @@ function handleAuthStateChange(user) {
   }
 }
 
+function handleAuthErrorMessage(error) {
+  const code = error.code || "";
+  const msg = error.message || "";
+  console.error("Firebase Auth Error:", code, msg);
+
+  if (code === "auth/unauthorized-domain") {
+    showToast("Error: Domain 'vajrivarun.github.io' not authorized in Firebase Console!");
+    alert("Firebase Auth Error: Domain 'vajrivarun.github.io' is not in your Firebase Authorized Domains list.\n\nTo fix:\n1. Open Firebase Console -> Authentication -> Settings -> Authorized Domains.\n2. Click 'Add domain' and enter: vajrivarun.github.io");
+  } else if (code === "auth/operation-not-allowed") {
+    showToast("Error: Google Sign-In is not enabled in Firebase Console!");
+    alert("Firebase Auth Error: Google Sign-In provider is disabled in Firebase Console.\n\nTo fix:\n1. Open Firebase Console -> Authentication -> Sign-in method.\n2. Enable 'Google' and save.");
+  } else {
+    showToast(`Auth error: ${code || msg}`);
+  }
+}
+
 async function loginWithFirebaseGoogle() {
   const provider = new GoogleAuthProvider();
   try {
     await signInWithPopup(auth, provider);
   } catch (error) {
-    console.error("Firebase Login failed:", error);
-    showToast("Google login failed.");
+    console.warn("Popup login failed or blocked, attempting fallback:", error);
+    if (
+      error.code === "auth/popup-blocked" || 
+      error.code === "auth/popup-closed-by-user" || 
+      error.code === "auth/cancelled-popup-request"
+    ) {
+      showToast("Popup blocked/closed. Switching to Redirect Sign-In...");
+      try {
+        await signInWithRedirect(auth, provider);
+      } catch (redirectErr) {
+        handleAuthErrorMessage(redirectErr);
+      }
+    } else {
+      handleAuthErrorMessage(error);
+    }
   }
 }
 
