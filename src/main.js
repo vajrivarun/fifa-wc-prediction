@@ -249,17 +249,39 @@ function handleAuthErrorMessage(error) {
 }
 
 async function loginWithFirebaseGoogle() {
+  console.log("Google Sign-In button clicked!");
+  showToast("Connecting to Google Sign-In...");
+
+  if (!auth) {
+    showToast("Firebase Auth initializing... Please try again in 1 second.");
+    console.error("Auth object is null or undefined.");
+    return;
+  }
+
+  btnGoogleLogin.disabled = true;
+  btnGoogleLogin.style.opacity = "0.7";
+
   const provider = new GoogleAuthProvider();
+
   try {
+    // Attempt pop-up sign-in
     await signInWithPopup(auth, provider);
+    btnGoogleLogin.disabled = false;
+    btnGoogleLogin.style.opacity = "1";
   } catch (error) {
-    console.warn("Popup login failed or blocked, attempting fallback:", error);
+    btnGoogleLogin.disabled = false;
+    btnGoogleLogin.style.opacity = "1";
+    console.warn("Popup login failed or was blocked. Initiating Redirect Sign-In...", error);
+    
+    // If pop-up is blocked, closed, or fails for any reason, trigger full page redirect to Google
     if (
       error.code === "auth/popup-blocked" || 
       error.code === "auth/popup-closed-by-user" || 
-      error.code === "auth/cancelled-popup-request"
+      error.code === "auth/cancelled-popup-request" ||
+      error.code === "auth/network-request-failed" ||
+      !error.code
     ) {
-      showToast("Popup blocked/closed. Switching to Redirect Sign-In...");
+      showToast("Redirecting to Google login page...");
       try {
         await signInWithRedirect(auth, provider);
       } catch (redirectErr) {
