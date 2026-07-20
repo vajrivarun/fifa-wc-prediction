@@ -208,11 +208,18 @@ function handleAuthStateChange(user) {
     currentUser = user;
     userAvatar.src = user.photoURL || "https://api.dicebear.com/7.x/bottts/svg?seed=" + user.uid;
     
+    // Set user display name & email in header top right corner
+    const displayNameElem = document.getElementById("user-display-name");
+    const emailElem = document.getElementById("user-email");
+    if (displayNameElem) displayNameElem.innerText = user.displayName || "Google User";
+    if (emailElem) emailElem.innerText = user.email || "";
+
     viewAuth.classList.add("hidden-element");
     viewDashboard.classList.remove("hidden-element");
     appHeader.classList.remove("hidden-element");
     
-    showToast(`Logged in as ${user.displayName}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    showToast(`Logged in as ${user.displayName || user.email}`);
     
     // Init state listeners
     if (!isMockMode) {
