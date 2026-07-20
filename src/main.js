@@ -113,8 +113,6 @@ async function detectDatabaseMode() {
   initApplication();
 }
 
-detectDatabaseMode();
-
 // ===============================================================
 // Main Application Routing & Handlers
 // ===============================================================
@@ -249,8 +247,8 @@ function handleAuthErrorMessage(error) {
 }
 
 async function loginWithFirebaseGoogle() {
-  console.log("Google Sign-In button clicked!");
-  showToast("Connecting to Google Sign-In...");
+  console.log("[Auth] Google Sign-In button clicked!");
+  showToast("Redirecting to Google Sign-In...");
 
   if (!auth) {
     showToast("Firebase Auth initializing... Please try again in 1 second.");
@@ -264,31 +262,18 @@ async function loginWithFirebaseGoogle() {
   const provider = new GoogleAuthProvider();
 
   try {
-    // Attempt pop-up sign-in
-    await signInWithPopup(auth, provider);
-    btnGoogleLogin.disabled = false;
-    btnGoogleLogin.style.opacity = "1";
+    // Primary: Redirect Sign-In (Works on all mobile, desktop, and popup-blocked browsers)
+    await signInWithRedirect(auth, provider);
   } catch (error) {
-    btnGoogleLogin.disabled = false;
-    btnGoogleLogin.style.opacity = "1";
-    console.warn("Popup login failed or was blocked. Initiating Redirect Sign-In...", error);
-    
-    // If pop-up is blocked, closed, or fails for any reason, trigger full page redirect to Google
-    if (
-      error.code === "auth/popup-blocked" || 
-      error.code === "auth/popup-closed-by-user" || 
-      error.code === "auth/cancelled-popup-request" ||
-      error.code === "auth/network-request-failed" ||
-      !error.code
-    ) {
-      showToast("Redirecting to Google login page...");
-      try {
-        await signInWithRedirect(auth, provider);
-      } catch (redirectErr) {
-        handleAuthErrorMessage(redirectErr);
-      }
-    } else {
-      handleAuthErrorMessage(error);
+    console.warn("Redirect sign-in failed, trying popup fallback:", error);
+    try {
+      await signInWithPopup(auth, provider);
+      btnGoogleLogin.disabled = false;
+      btnGoogleLogin.style.opacity = "1";
+    } catch (popupErr) {
+      btnGoogleLogin.disabled = false;
+      btnGoogleLogin.style.opacity = "1";
+      handleAuthErrorMessage(popupErr);
     }
   }
 }
@@ -971,5 +956,24 @@ function showToast(message) {
   
   setTimeout(() => {
     toast.classList.remove("show");
-  }, 3500);
+  }, 4500);
 }
+
+// Global Runtime Error Handlers for Diagnostics
+window.addEventListener("error", (event) => {
+  console.error("Global JS Error:", event.error);
+  if (event && event.message) {
+    showToast("JS Error: " + event.message);
+  }
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  console.error("Unhandled Promise Rejection:", event.reason);
+  if (event && event.reason) {
+    const msg = event.reason.message || event.reason.code || JSON.stringify(event.reason);
+    showToast("Error: " + msg);
+  }
+});
+
+// Kick off Application Execution
+detectDatabaseMode();
